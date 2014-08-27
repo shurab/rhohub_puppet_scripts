@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# /etc/init.d/resque
+# init script for resque workers
+
+# Redis URL:
+redis=redis://<%= @redis_url %>
+#redis=redis://redistogo:79c82cb2de60532da5f0d49ad10dd62c@spadefish.redistogo.com:9658/
+queue=linux_job
+count=1
+user=ubuntu
+
+start() {
+   echo -n 'Starting resque... '
+   #cd /opt/resque/rhohublib_deploy/rhohublib/current
+   cd /opt/resque/rhohublib
+   mkdir -p /tmp/pids /var/log/rhohub /opt/resque/home /opt/resque
+   chown -R $user /tmp/pids /var/log/rhohub /opt/resque
+   for (( i = 1; i <= $count; i++ )); do
+        pidfile=/tmp/pids/resque_worker_$i.pid
+        sudo -u $user RHOBUILD=/opt/resque/rhobuild.yml \
+          PATH=/usr/local/rvm/gems/ruby-1.9.3-p547/bin:/usr/local/rvm/gems/ruby-1.9.3-p547@global/bin:/usr/local/rvm/rubies/ruby-1.9.3-p547/bin:$PATH REDIS=$redis \
+          QUEUE=$queue PIDFILE=$pidfile HOME=/home/ubuntu \
+          /usr/local/rvm/wrappers/default/rake resque:work >> /var/log/rhohub/resque.log 2>&1 &
+   done
+   echo 'done'
+   exit 0
+}
+
+stop() {
+   echo -n 'Stopping resque... '
+   for (( i = 1; i <= $count; i++ )); do
+       if [ -f /tmp/pids/resque_worker_$i.pid ]; then
+           kill -2 `cat /tmp/pids/resque_worker_$i.pid` > /dev/null 2>&1
+           rm -f /tmp/pids/resque_worker_$i.pid > /dev/null 2>&1
+       fi
+   done
+   sleep 5
+   echo 'done'
+   exit 0
+}
+
+status() {
+   for (( i = 1; i <= $count; i++ )); do
+       if [ -f /tmp/pids/resque_worker_$i.pid ]; then
+           pid=`cat /tmp/pids/resque_worker_$i.pid`
+           [ -z `ps -p $pid -o pid= 2> /dev/null` ] \
+           && { echo "Resque is not running ..."; exit 1; } \
+           || { echo "Resque is running with pid=${pid}"; }
+       else
+           echo "Resque is not running ..."; exit 1
+       fi
+   done
+   exit 0
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    status)
+        status
+        ;;
+    *)
+        echo "Usage:  {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+exit $?

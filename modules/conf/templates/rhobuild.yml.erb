@@ -1,0 +1,34 @@
+env:
+  #app: C:/rhodes-app
+  paths:
+    java: <%= @jdk_path %>/bin
+    android: <%= @android_sdk_path %>
+    android-ndk: <%= @android_ndk_path %>
+    cabwiz:  C:/Program Files (x86)/Windows Mobile 6 SDK/Tools/CabWiz
+    msbuild: C:/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe
+    vcbuild: C:/Program Files (x86)/Microsoft Visual Studio 9.0/VC/vcpackages/vcbuild.exe
+
+build:
+  wmpath: platform/wm
+  wp8path: platform/wp8
+  androidpath: platform/android
+  iphonepath: platform/iphone
+
+android:
+  # Google API key obtained from http://code.google.com/intl/en/android/add-ons/google-apis/mapkey.html
+  #apikey: "GOOGLE-API-KEY-FOR-ANDROID"
+  # This is version of Android platform used to run emulator. If not specified, latest available will be used.
+  #version: 1.6
+  # This enable/disable native geo mapping for Android. Disabled by default
+  #mapping: yes
+  # Here data for production certificate located. If file pointed by certificate: does not exist, it will be auto-generated
+  #production:
+  #  certificate: /path/to/developer/certificate
+  #  password: "password-for-certificate"
+  #  alias: "certificate-alias"
+
+excludedirs:
+  all:
+    - "**/.*.swo"
+    - "**/.*.swn"
+    - "**/.DS_Store"

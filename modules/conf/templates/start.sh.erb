@@ -1,0 +1,17 @@
+#!/bin/bash
+source ~/.bash_profile
+
+rvm use 1.9.3
+
+export QUEUE=osx_build
+#export VVERBOSE=1
+export RHOBUILDYML=/opt/resque/rhobuild.yml
+
+# Redis URL
+export REDIS=redis://<%= @redis_url %>
+# Example of Redis URL for staging server
+#export REDIS=redis://redistogo:79c82cb2de60532da5f0d49ad10dd62c@spadefish.redistogo.com:9658/
+# TODO: logging
+# bundle exec rake resque:work --trace >> rhohub.log 2>&1
+cd ./rhohublib
+bundle exec rake resque:work --trace
