@@ -19,7 +19,7 @@ start() {
    for (( i = 1; i <= $count; i++ )); do
         pidfile=/tmp/pids/resque_worker_$i.pid
         sudo -u $user RHOBUILD=/opt/resque/rhobuild.yml \
-          PATH=/usr/local/rvm/gems/ruby-1.9.3-p547/bin:/usr/local/rvm/gems/ruby-1.9.3-p547@global/bin:/usr/local/rvm/rubies/ruby-1.9.3-p547/bin:$PATH REDIS=$redis \
+          PATH=/usr/local/rvm/gems/ruby-1.9.3-p551/bin:/usr/local/rvm/gems/ruby-1.9.3-p551@global/bin:/usr/local/rvm/rubies/ruby-1.9.3-p551/bin:$PATH REDIS=$redis \
           QUEUE=$queue PIDFILE=$pidfile HOME=/home/ubuntu \
           /usr/local/rvm/wrappers/default/rake resque:work >> /var/log/rhohub/resque.log 2>&1 &
    done

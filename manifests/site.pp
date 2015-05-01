@@ -40,10 +40,10 @@ class requirements {
   }
 
   file { ["/opt/resque", "/opt/resque/sdk",
-    "/opt/resque/sdk/3.5.1.14",
+    "/opt/resque/sdk/3.5.1.15",
     "/opt/resque/sdk/4.0.9",
     "/opt/resque/sdk/4.1.6",
-    "/opt/resque/sdk/5.0.2"]:
+    "/opt/resque/sdk/5.0.27"]:
     ensure => "directory",
     #owner  => "ubuntu",
     #group  => "wheel",
@@ -51,28 +51,34 @@ class requirements {
   }
 
   download_gemfile {
-    [ 'rhodes-3.5.1.14', 'rhoelements-2.2.1.13.11' ]:
-    url     => 'https://s3.amazonaws.com/rhohub-gemsets/3.5.1.14',
-    cwd     => '/opt/resque/sdk/3.5.1.14',
-    require => File['/opt/resque/sdk/3.5.1.14'],
+    [ 'rhodes-3.5.1.15', 'rhoelements-2.2.1.13.11' ]:
+    url     => 'http://s3.amazonaws.com/rhohub-gemsets/3.5.1.15',
+    cwd     => '/opt/resque/sdk/3.5.1.15',
+    require => File['/opt/resque/sdk/3.5.1.15'],
   }
+  # All gems from v4.0 and up are available in buckets
+  # http://rhomobile-suite.s3.amazonaws.com/4.0/
+  # http://rhomobile-suite.s3.amazonaws.com/4.1/
+  # http://rhomobile-suite.s3.amazonaws.com/5.0/
+  # http://rhomobile-suite.s3.amazonaws.com/5.1/
+  # ...
   download_gemfile {
     [ 'rhodes-4.0.9', 'rhoelements-4.0.9', 'rhoconnect-client-4.0.9' ]:
-    url     => 'https://s3.amazonaws.com/rhohub-gemsets/4.0.9',
+    url     => 'http://rhomobile-suite.s3.amazonaws.com/4.0/4.0.9',
     cwd     => '/opt/resque/sdk/4.0.9',
     require => File['/opt/resque/sdk/4.0.9'],
   }
   download_gemfile {
     [ 'rhodes-4.1.6', 'rhoelements-4.1.6', 'rhoconnect-client-4.1.6' ]:
-    url     => 'https://s3.amazonaws.com/rhohub-gemsets/4.1.6',
+    url     => 'http://rhomobile-suite.s3.amazonaws.com/4.1/4.1.6',
     cwd     => '/opt/resque/sdk/4.1.6',
     require => File['/opt/resque/sdk/4.1.6'],
   }
   download_gemfile {
-    [ 'rhodes-5.0.2', 'rhoelements-5.0.2', 'rhoconnect-client-5.0.2', 'rhodes-containers-5.0.2' ]:
-      url     => 'https://s3.amazonaws.com/rhohub-gemsets/5.0.2',
-      cwd     => '/opt/resque/sdk/5.0.2',
-      require => File['/opt/resque/sdk/5.0.2'],
+    [ 'rhodes-5.0.27', 'rhoelements-5.0.27', 'rhoconnect-client-5.0.27', 'rhodes-containers-5.0.27' ]:
+    url     => 'http://rhomobile-suite.s3.amazonaws.com/5.0/5.0.27',
+    cwd     => '/opt/resque/sdk/5.0.27',
+    require => File['/opt/resque/sdk/5.0.27'],
   }
 }
 
@@ -82,8 +88,8 @@ class android_install {
     cwd     => '/tmp',
     path    => ["/bin", "/usr/bin", "/usr/sbin"],
     creates => ["/usr/local/android-sdk-linux"],
-    command => "wget http://dl.google.com/android/android-sdk_r23-linux.tgz -o /dev/null && \
-tar xzf android-sdk_r23-linux.tgz && sudo mv android-sdk-linux /usr/local && \
+    command => "wget http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz -o /dev/null && \
+tar xzf android-sdk_r24.0.2-linux.tgz && sudo mv android-sdk-linux /usr/local && \
 wget http://dl.google.com/android/ndk/android-ndk-r9d-linux-x86.tar.bz2 -o /dev/null && \
 tar xjf android-ndk-r9d-linux-x86.tar.bz2 && sudo mv android-ndk-r9d /usr/local && \
 rm *.tar.bz2 && rm *.tgz",
@@ -104,7 +110,12 @@ rm *.tar.bz2 && rm *.tgz",
   file { '/usr/local/android-sdk-linux/tools/zipalign':
     ensure  => link,
     replace => 'no', # do not create link if the file already exists
-    target  => '/usr/local/android-sdk-linux/build-tools/20.0.0/zipalign',
+
+    # TODO: build-tools version !!!
+    # find path to file zipalign !!!
+    # find /usr/local/android-sdk-linux/build-tools -name zipalign
+    # =>
+    target  => '/usr/local/android-sdk-linux/build-tools/21.1.2/zipalign',
     require => Exec['update-android'],
   }
   file { '/home/ubuntu/.android':
@@ -120,7 +131,7 @@ rm *.tar.bz2 && rm *.tgz",
   }
 }
 
-$system_ruby = 'ruby-1.9.3-p547'
+$system_ruby = 'ruby-1.9.3-p551'
 
 class rvm_install {
   include rvm
@@ -142,16 +153,16 @@ class rvm_install {
 
 class rhodes_setup {
   file {[
-    "/usr/local/rvm/gems/${system_ruby}@3.5.1.14/gems/rhodes-3.5.1.14/rhobuild.yml",
+    "/usr/local/rvm/gems/${system_ruby}@3.5.1.15/gems/rhodes-3.5.1.15/rhobuild.yml",
     "/usr/local/rvm/gems/${system_ruby}@4.0.9/gems/rhodes-4.0.9/rhobuild.yml",
     "/usr/local/rvm/gems/${system_ruby}@4.1.6/gems/rhodes-4.1.6/rhobuild.yml",
-    "/usr/local/rvm/gems/${system_ruby}@5.0.2/gems/rhodes-5.0.2/rhobuild.yml",
+    "/usr/local/rvm/gems/${system_ruby}@5.0.27/gems/rhodes-5.0.27/rhobuild.yml",
     '/opt/resque/rhobuild.yml',
   ]:
     content => template('conf/rhobuild.yml.erb'),
   }
   # Iterate over gemsets and run bundler foreach itme
-  run_bundler_for_gemset { ['default', '3.5.1.14', '4.0.9', '4.1.6', '5.0.2']: }
+  run_bundler_for_gemset { ['default', '3.5.1.15', '4.0.9', '4.1.6', '5.0.27']: }
 }
 
 class resque_service {
@@ -184,7 +195,7 @@ node 'rho-builder' {
   class { 'requirements': } -> class { 'rvm_install':  }
 
   rvm_gemset {
-    "${system_ruby}@3.5.1.14":
+    "${system_ruby}@3.5.1.15":
     ensure  => present,
     require => Rvm_system_ruby["${system_ruby}"];
 
@@ -196,19 +207,19 @@ node 'rho-builder' {
     ensure => present,
     require => Rvm_system_ruby["${system_ruby}"];
 
-    "${system_ruby}@5.0.2":
+    "${system_ruby}@5.0.27":
     ensure => present,
     require => Rvm_system_ruby["${system_ruby}"];
   }
 
   rvm_gem {
-    # 3.5.1.14
-    "${system_ruby}@3.5.1.14/rhodes":
-    source => '/opt/resque/sdk/3.5.1.14/rhodes-3.5.1.14.gem',
-    require => Rvm_gemset["${system_ruby}@3.5.1.14"];
-    "${system_ruby}@3.5.1.14/rhoelements":
-    source => '/opt/resque/sdk/3.5.1.14/rhoelements-2.2.1.13.11.gem',
-    require => Rvm_gemset["${system_ruby}@3.5.1.14"];
+    # 3.5.1.15
+    "${system_ruby}@3.5.1.15/rhodes":
+    source => '/opt/resque/sdk/3.5.1.15/rhodes-3.5.1.15.gem',
+    require => Rvm_gemset["${system_ruby}@3.5.1.15"];
+    "${system_ruby}@3.5.1.15/rhoelements":
+    source => '/opt/resque/sdk/3.5.1.15/rhoelements-2.2.1.13.11.gem',
+    require => Rvm_gemset["${system_ruby}@3.5.1.15"];
 
     # 4.0.9
     "${system_ruby}@4.0.9/rhodes":
@@ -232,19 +243,19 @@ node 'rho-builder' {
     source => '/opt/resque/sdk/4.1.6/rhoconnect-client-4.1.6.gem',
     require => Rvm_gemset["${system_ruby}@4.1.6"];
 
-    # 5.0.2
-    "${system_ruby}@5.0.2/rhodes":
-    source => '/opt/resque/sdk/5.0.2/rhodes-5.0.2.gem',
-    require => Rvm_gemset["${system_ruby}@5.0.2"];
-    "${system_ruby}@5.0.2/rhoelements":
-    source => '/opt/resque/sdk/5.0.2/rhoelements-5.0.2.gem',
-    require => Rvm_gemset["${system_ruby}@5.0.2"];
-    "${system_ruby}@5.0.2/rhoconnect-client":
-    source => '/opt/resque/sdk/5.0.2/rhoconnect-client-5.0.2.gem',
-    require => Rvm_gemset["${system_ruby}@5.0.2"];
-    "${system_ruby}@5.0.2/rhodes-containers":
-    source => '/opt/resque/sdk/5.0.2/rhodes-containers-5.0.2.gem',
-    require => Rvm_gemset["${system_ruby}@5.0.2"];
+    # 5.0.27
+    "${system_ruby}@5.0.27/rhodes":
+    source => '/opt/resque/sdk/5.0.27/rhodes-5.0.27.gem',
+    require => Rvm_gemset["${system_ruby}@5.0.27"];
+    "${system_ruby}@5.0.27/rhoelements":
+    source => '/opt/resque/sdk/5.0.27/rhoelements-5.0.27.gem',
+    require => Rvm_gemset["${system_ruby}@5.0.27"];
+    "${system_ruby}@5.0.27/rhoconnect-client":
+    source => '/opt/resque/sdk/5.0.27/rhoconnect-client-5.0.27.gem',
+    require => Rvm_gemset["${system_ruby}@5.0.27"];
+    "${system_ruby}@5.0.27/rhodes-containers":
+    source => '/opt/resque/sdk/5.0.27/rhodes-containers-5.0.27.gem',
+    require => Rvm_gemset["${system_ruby}@5.0.27"];
   } ->
 
   class { 'android_install': }       ->

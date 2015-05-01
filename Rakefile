@@ -1,10 +1,15 @@
 SSH     = "ssh -A -i ~/.ssh/rhomobilekey.pem"
 SCP     = "scp -i ~/.ssh/rhomobilekey.pem"
+
 REPO    = 'git@github.com:rhomobile/rho-puppet-scripts.git'
 RHOHUBLIB_REPO = 'git@github.com:rhomobile/rhohublib.git'
+
 HOSTNAME = 'rho-builder'
-# Staging redis
-REDIS_URL = 'redistogo:79c82cb2de60532da5f0d49ad10dd62c@spadefish.redistogo.com:9658'
+
+# Redis URL: staging build environment
+# REDIS_URL = 'redistogo:79c82cb2de60532da5f0d49ad10dd62c@spadefish.redistogo.com:9658'
+# Redis URL: test build environment
+REDIS_URL = "redistogo:809c443d8a5c08cca4806b30555d27e7@greeneye.redistogo.com:10791"
 
 namespace 'ubuntu' do
   desc "Bootstrap Puppet on ubuntu ENV['CLIENT'] with hostname '#{HOSTNAME}'"
@@ -21,7 +26,7 @@ export TERM=xterm-256color; wget https://apt.puppetlabs.com/puppetlabs-release-t
 sudo dpkg -i puppetlabs-release-trusty.deb && \
 sudo apt-get update && sudo apt-get -y install git puppet && \
 sudo puppet module install puppetlabs-stdlib && \
-sudo puppet module install maestrodev-rvm --version 1.5.6 && \
+sudo puppet module install maestrodev-rvm && \
 cd /etc/puppet/modules/rvm/lib/puppet/provider/rvm_gem && \
 sudo sed -i '/^        command << source$/c\        command << \"-N\" << source' gem.rb
 BOOTSTRAP
@@ -47,22 +52,11 @@ BOOTSTRAP
     exit $?.exitstatus
   end
 
-  desc "Run Puppet scripts on ubuntu ENV['CLIENT'] with rsa private key ENV['RHOGLUSTERKEY']"
+  desc "Run Puppet scripts on ubuntu ENV['CLIENT']"
   task :apply do
     client        = ENV['CLIENT']
     user          = 'ubuntu'
-    rhoglusterkey = ENV['RHOGLUSTERKEY']
     redis_url     = ENV['REDIS_URL'] || REDIS_URL
-
-    unless rhoglusterkey && File.exist?(rhoglusterkey)
-      rhoglusterkey = 'rhoglusterkey.pem' if rhoglusterkey.nil? || rhoglusterkey.empty?
-      puts "File '#{rhoglusterkey}' not found"
-      exit -1
-    end
-    unless File.basename(rhoglusterkey, '.pem') == 'rhoglusterkey'
-      puts "Invalid rhoglusterkey file name. 'rhoglusterkey.pem' file is expected."
-      exit -1
-    end
 
     commands = <<BOOTSTRAP
 sudo chown ubuntu:ubuntu -R /opt && mkdir -p /opt/resque && rm -rf /opt/resque/rhohublib && \
@@ -76,20 +70,31 @@ BOOTSTRAP
     log = %x( #{SSH} #{user}@#{client} "#{commands}" )
     puts log
 
-    commands = <<BOOTSTRAP
+    # 'RHOGLUSTERKEY' installation is optional
+    rhoglusterkey = ENV['RHOGLUSTERKEY']
+    if rhoglusterkey
+      unless File.exist?(rhoglusterkey)
+        puts "File '#{rhoglusterkey}' not found"
+        exit(-1)
+      end
+      unless File.basename(rhoglusterkey, '.pem') == 'rhoglusterkey'
+        puts "Invalid rhoglusterkey file name. 'rhoglusterkey.pem' file is expected."
+        exit(-1)
+      end
+      commands = <<BOOTSTRAP
 #{SCP} #{rhoglusterkey} ubuntu@#{client}:/opt/resque && #{SSH} #{user}@#{client} "sudo chmod 0400 /opt/resque/#{File.basename(rhoglusterkey)}"
 BOOTSTRAP
-    puts "Copy #{File.basename(rhoglusterkey)} file to #{user}@#{client}:/opt/resque directory."
-    #puts commands
 
-    %x( #{commands} )
+      puts "Copy #{File.basename(rhoglusterkey)} file to #{user}@#{client}:/opt/resque directory."
+      #puts commands
+      %x( #{commands} )
+    end
     exit $?.exitstatus
   end
-
 end
 
 namespace 'osx' do
-  desc "Bootstrap Puppet on Mac OSX ENV['CLIENT']"
+  desc "Bootstrap Puppet on Mac OSX ENV['CLIENT'] with hostname '#{HOSTNAME}'"
   task :bootstrap do
     client = ENV['CLIENT']
     user   = 'rhomobile'
@@ -117,21 +122,20 @@ BOOTSTRAP
     exit $?.exitstatus
   end
 
-  desc "Run Puppet scripts on Mac OSX ENV['CLIENT'] with rsa private key ENV['RHOGLUSTERKEY']"
+  desc "Run Puppet scripts on Mac OSX ENV['CLIENT']"
   task :apply do
     client        = ENV['CLIENT']
     user          = 'rhomobile'
-    rhoglusterkey = ENV['RHOGLUSTERKEY']
     redis_url     = ENV['REDIS_URL'] || REDIS_URL
 
     unless rhoglusterkey && File.exist?(rhoglusterkey)
       rhoglusterkey = 'rhoglusterkey.pem' if rhoglusterkey.nil? || rhoglusterkey.empty?
       puts "File '#{rhoglusterkey}' not found"
-      exit -1
+      exit(-1)
     end
     unless File.basename(rhoglusterkey, '.pem') == 'rhoglusterkey'
       puts "Invalid rhoglusterkey file name. 'rhoglusterkey.pem' file is expected."
-      exit -1
+      exit(-1)
     end
 
     commands = <<BOOTSTRAP
@@ -146,11 +150,25 @@ BOOTSTRAP
     log = %x( #{SSH} #{user}@#{client} "#{commands}" )
     puts log
 
-    commands = <<BOOTSTRAP
-#{SCP} #{rhoglusterkey} #{user}@#{client}:/opt/resque && #{SSH} #{user}@#{client} "sudo chmod 0400 /opt/resque/#{File.basename(rhoglusterkey)}"
+    # 'RHOGLUSTERKEY' installation is optional
+    rhoglusterkey = ENV['RHOGLUSTERKEY']
+    if rhoglusterkey
+      unless File.exist?(rhoglusterkey)
+        puts "File '#{rhoglusterkey}' not found"
+        exit(-1)
+      end
+      unless File.basename(rhoglusterkey, '.pem') == 'rhoglusterkey'
+        puts "Invalid rhoglusterkey file name. 'rhoglusterkey.pem' file is expected."
+        exit(-1)
+      end
+      commands = <<BOOTSTRAP
+#{SCP} #{rhoglusterkey} ubuntu@#{client}:/opt/resque && #{SSH} #{user}@#{client} "sudo chmod 0400 /opt/resque/#{File.basename(rhoglusterkey)}"
 BOOTSTRAP
-    puts "Copy #{File.basename(rhoglusterkey)} file to #{user}@#{client}:/opt/resque directory."
-    %x( #{commands} )
+
+      puts "Copy #{File.basename(rhoglusterkey)} file to #{user}@#{client}:/opt/resque directory."
+      #puts commands
+      %x( #{commands} )
+    end
     exit $?.exitstatus
   end
 

@@ -58,16 +58,16 @@ define run_bundler_for_gemset(
   }
 }
 
-$system_ruby = 'ruby-1.9.3-p547'
+$system_ruby = 'ruby-1.9.3-p551'
 
 class requirements {
   group { "puppet": ensure => "present", }
-
+Ï
   file { ["/opt/resque", "/opt/resque/sdk",
-    "/opt/resque/sdk/3.5.1.14",
+    "/opt/resque/sdk/3.5.1.15",
     "/opt/resque/sdk/4.0.9",
     "/opt/resque/sdk/4.1.6",
-    "/opt/resque/sdk/5.0.2"]:
+    "/opt/resque/sdk/5.0.25"]:
     ensure => "directory",
     #owner  => "ubuntu",
     #group  => "wheel",
@@ -75,28 +75,32 @@ class requirements {
   }
 
   download_gemfile {
-    [ 'rhodes-3.5.1.14', 'rhoelements-2.2.1.13.11' ]:
-      url     => 'https://s3.amazonaws.com/rhohub-gemsets/3.5.1.14',
-      cwd     => '/opt/resque/sdk/3.5.1.14',
-      require => File['/opt/resque/sdk/3.5.1.14'],
+    [ 'rhodes-3.5.1.15', 'rhoelements-2.2.1.13.11' ]:
+      url     => 'https://s3.amazonaws.com/rhohub-gemsets/3.5.1.15',
+      cwd     => '/opt/resque/sdk/3.5.1.15',
+      require => File['/opt/resque/sdk/3.5.1.15'],
   }
+  # All gems from v4.0 and up are available in buckets
+  # http://rhomobile-suite.s3.amazonaws.com/4.0/
+  # http://rhomobile-suite.s3.amazonaws.com/4.1/
+  # ...
   download_gemfile {
     [ 'rhodes-4.0.9', 'rhoelements-4.0.9', 'rhoconnect-client-4.0.9' ]:
-      url     => 'https://s3.amazonaws.com/rhohub-gemsets/4.0.9',
+      url     => 'http://rhomobile-suite.s3.amazonaws.com/4.0/4.0.9',
       cwd     => '/opt/resque/sdk/4.0.9',
       require => File['/opt/resque/sdk/4.0.9'],
   }
   download_gemfile {
     [ 'rhodes-4.1.6', 'rhoelements-4.1.6', 'rhoconnect-client-4.1.6' ]:
-      url     => 'https://s3.amazonaws.com/rhohub-gemsets/4.1.6',
+      url     => 'http://rhomobile-suite.s3.amazonaws.com/4.1/4.1.6',
       cwd     => '/opt/resque/sdk/4.1.6',
       require => File['/opt/resque/sdk/4.1.6'],
   }
   download_gemfile {
-    [ 'rhodes-5.0.2', 'rhoelements-5.0.2', 'rhoconnect-client-5.0.2', 'rhodes-containers-5.0.2' ]:
-      url     => 'https://s3.amazonaws.com/rhohub-gemsets/5.0.2',
-      cwd     => '/opt/resque/sdk/5.0.2',
-      require => File['/opt/resque/sdk/5.0.2'],
+    [ 'rhodes-5.0.25', 'rhoelements-5.0.25', 'rhoconnect-client-5.0.25', 'rhodes-containers-5.0.25' ]:
+      url     => 'http://rhomobile-suite.s3.amazonaws.com/5.0/5.0.27',
+      cwd     => '/opt/resque/sdk/5.0.25',
+      require => File['/opt/resque/sdk/5.0.25'],
   }
   # TODO:
   file { '/Users/rhomobile/.gemrc':
@@ -110,7 +114,7 @@ class requirements {
 
 class create_gemsets {
   create_gemset {
-    [ '3.5.1.14', '4.0.9', '4.1.6', '5.0.2' ]:
+    [ '3.5.1.15', '4.0.9', '4.1.6', '5.0.25' ]:
       ruby => $system_ruby,
   }
 
@@ -118,9 +122,9 @@ class create_gemsets {
 
 class install_gems {
   install_gem {
-    [ 'rhodes-3.5.1.14', 'rhoelements-2.2.1.13.11' ]:
+    [ 'rhodes-3.5.1.15', 'rhoelements-2.2.1.13.11' ]:
       ruby   => $system_ruby,
-      gemset => '3.5.1.14',
+      gemset => '3.5.1.15',
   }
   install_gem {
     [ 'rhodes-4.0.9', 'rhoelements-4.0.9', 'rhoconnect-client-4.0.9' ]:
@@ -133,25 +137,25 @@ class install_gems {
       gemset => '4.1.6',
   }
   install_gem {
-    [ 'rhodes-5.0.2', 'rhoelements-5.0.2', 'rhoconnect-client-5.0.2', 'rhodes-containers-5.0.2' ]:
+    [ 'rhodes-5.0.25', 'rhoelements-5.0.25', 'rhoconnect-client-5.0.25', 'rhodes-containers-5.0.25' ]:
       ruby => $system_ruby,
-      gemset => '5.0.2',
+      gemset => '5.0.25',
   }
 }
 
 class rhodes_setup {
   file {[
-    "/Users/rhomobile/.rvm/gems/${system_ruby}@3.5.1.14/gems/rhodes-3.5.1.14/rhobuild.yml",
+    "/Users/rhomobile/.rvm/gems/${system_ruby}@3.5.1.15/gems/rhodes-3.5.1.15/rhobuild.yml",
     "/Users/rhomobile/.rvm/gems/${system_ruby}@4.0.9/gems/rhodes-4.0.9/rhobuild.yml",
     "/Users/rhomobile/.rvm/gems/${system_ruby}@4.1.6/gems/rhodes-4.1.6/rhobuild.yml",
-    "/Users/rhomobile/.rvm/gems/${system_ruby}@5.0.2/gems/rhodes-5.0.2/rhobuild.yml",
+    "/Users/rhomobile/.rvm/gems/${system_ruby}@5.0.25/gems/rhodes-5.0.25/rhobuild.yml",
     '/opt/resque/rhobuild.yml',
   ]:
     content => template('conf/rhobuild.yml.erb'),
   }
 
   # Iterate over gemsets and run bundler foreach item
-  run_bundler_for_gemset { ['default', '3.5.1.14', '4.0.9', '4.1.6', '5.0.2']: }
+  run_bundler_for_gemset { ['default', '3.5.1.15', '4.0.9', '4.1.6', '5.0.25']: }
 }
 
 class resque_service {
